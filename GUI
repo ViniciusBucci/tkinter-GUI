@@ -1,0 +1,27 @@
+#D:\users\F07744E\AppData\Local\Programs\Python\Python310\python.exe -i "$(FULL_CURRENT_PATH)"
+import tkinter
+
+
+
+
+
+
+listaVariaveis = ["velocidade", "airbag", "trip"]# lista que sera exibida no primeiro menu (vai ser o arquivo DBC)
+
+janela=tkinter.Tk() 
+
+############################################################################## cria a janela principal #########################################################
+width= janela.winfo_screenwidth()  
+height= janela.winfo_screenheight() 
+janela.geometry("%dx%d" % (width, height)) 
+janela.title("Geeeks For Geeks") 
+
+############################################################################## gera o primeiro option menu ######################################################
+valorFixado = tkinter.StringVar(janela)#variavel que fixa o valor no menu
+valorFixado.set(listaVariaveis[0])#seta a variavel que fica fixa inicialmente no menu
+
+questionarioMenu = tkinter.OptionMenu(janela, valorFixado, *listaVariaveis)#configura o menu com as variaveis
+questionarioMenu.pack()#faz o encapsulamento
+
+
+janela.mainloop() 
