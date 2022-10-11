@@ -10,12 +10,8 @@
     
     Código desenvolvido por: Vinicius de Castro Bucci         Contato: (19) 99325-7660
                              Vinicius Dantas
-                             Eric Baptxusudisiicci                                                                                                                                            
+                             Eric Baptistucci                                                                                                                                            
  """
-
-
-
-
 import tkinter as tk
 from tkinter import ttk
 import subprocess
@@ -25,6 +21,11 @@ import cantools
 db = cantools.db.load_file('P226MCA.dbc')#carrega o arquivo DBC
 listaVariaveis = db.messages
 
+'''
+teste = db.messages
+teste = teste[0].name
+print(teste)
+'''
 
 janela=tk.Tk() 
 ############################################################################## cria a janela principal #########################################################
@@ -32,44 +33,92 @@ width= janela.winfo_screenwidth()
 height= janela.winfo_screenheight() 
 janela.geometry("%dx%d" % (width, height)) 
 janela.title("automação de validação")
+listaEnviada = [0,0,0]
+listaReserva = [0,0,0]
 
 ####################################################### cria os menus de seleção de mensagem, sinal e valor ####################################################
+
+#################### trata dados de mensagem #####################
+def tratamentoMensagem(valorMensagem):
+    valorMensagem = str(valorMensagem.split(","))
+    valorMensagem = valorMensagem.replace("message('","")
+    posicao = valorMensagem.find("'")
+
+    valorMensagem = valorMensagem[0:posicao]
+    valorMensagem = valorMensagem[2:]
+    return valorMensagem
+
+################### trata dados de sinal #######################
+def trataSaida(valorSaida):
+    posicaoInicial = valorSaida.find(":")
+    posicaoFinal = valorSaida.find("}")
+    valorSaida = valorSaida[posicaoInicial + 3 : posicaoFinal - 1]
+    return valorSaida
+
+def trataSinais(sinalTratado):
+    sinalTratado = str(sinalTratado)
+    posicaoInicial = sinalTratado.find("(")
+    posicaoFinal = sinalTratado.find(",", posicaoInicial)
+    sinalTratado = sinalTratado[posicaoInicial + 2 : posicaoFinal - 1]
+    return sinalTratado
+    
+
+def tratamentoSinal(valorSinal):
+    posicaoInicial = valorSinal.find(", None, {")    
+    posicaoFinal = valorSinal.find("}", posicaoInicial)   
+    valorSinal = valorSinal[posicaoInicial + 9 : posicaoFinal]
+    valorSinal = valorSinal.split(",")
+    return valorSinal
+
+
 def atualizaMensagem(self):
     mensagemAtual =  menuMensagem.get()
-    mensagemAtual = str(mensagemAtual.split(","))
-    mensagemAtual = mensagemAtual.replace("message('","")
-    posicao = mensagemAtual.find("'")
-
-    mensagemAtual = mensagemAtual[0:posicao]
-    mensagemAtual = mensagemAtual[2:]
+    mensagemAtual = tratamentoMensagem(mensagemAtual)
     sinalTratado = db.get_message_by_name(mensagemAtual)
+    listaEnviada[0] = mensagemAtual
     sinalTratado = sinalTratado.signals
+    SinalSaida = trataSinais(sinalTratado)
+    listaEnviada[1] = SinalSaida
+    
     
     menuSinal.config(values = sinalTratado)
     menuSinal.current(0)
     
     sinalAtual = menuSinal.get()
-    posicaoInicial = sinalAtual.find(", None, {")    
-    posicaoFinal = sinalAtual.find("}", posicaoInicial)   
-    sinalAtual = sinalAtual[posicaoInicial + 9:posicaoFinal]
-    sinalAtual = sinalAtual.split(",")  
+    sinalAtual = tratamentoSinal(sinalAtual)
     valorSinal = sinalAtual
     
     menuValor.config(values = valorSinal)
     menuValor.current(0)
     
+    auxiliarSinal = menuValor.get()
+    auxiliarSinal = auxiliarSinal[4:-1]
+    listaEnviada[2] = auxiliarSinal
     
     
 def atualizaSinal(self):
     sinalAtual = menuSinal.get()
+    sinalSaida = trataSinais(sinalAtual)
+    listaEnviada[1] = sinalSaida
+
     posicaoInicial = sinalAtual.find(", None, {")    
     posicaoFinal = sinalAtual.find("}", posicaoInicial)   
     sinalAtual = sinalAtual[posicaoInicial + 9:posicaoFinal]
     sinalAtual = sinalAtual.split(",")  
     valorSinal = sinalAtual
-    
+     
     menuValor.config(values = valorSinal)
     menuValor.current(0)
+    
+    auxiliarSinal = menuValor.get()
+    auxiliarSinal = auxiliarSinal[4:-1]
+    listaEnviada[2] = auxiliarSinal
+    
+def atualizaValor(self):
+    valorAtual = menuValor.get()
+    valorAtual = valorAtual[5:-1]
+    listaEnviada[2] = valorAtual  
+    
     
 ######################## cria o menu de mensagem ###########################
 labelTop=tk.Label(janela, text = "escolha a mensgem")
@@ -78,20 +127,17 @@ labelTop.grid(column = 0, row = 0)
 global menuMensagem
 global sinalTratado
 menuMensagem = ttk.Combobox(janela, values = listaVariaveis, width = 165, height = 40)
-
 menuMensagem.grid(column = 0, row = 1)
 menuMensagem.current(0)
 
 ############### trata a mensagem para adiquirir o sinal####################
 valorMensagem = menuMensagem.get()
-valorMensagem = str(valorMensagem.split(","))
-valorMensagem = valorMensagem.replace("message('","")
-posicao = valorMensagem.find("'")
+valorMensagem = tratamentoMensagem(valorMensagem)
+listaEnviada[0] = valorMensagem
 
-valorMensagem = valorMensagem[0:posicao]
-valorMensagem = valorMensagem[2:]
 sinalTratado = db.get_message_by_name(valorMensagem)
 sinalTratado = sinalTratado.signals
+SinalSaida = trataSinais(sinalTratado)
 
 ####################### cria o menu de sinal ##############################
 labelTopSinal=tk.Label(janela, text = "escolha o sinal")
@@ -103,14 +149,12 @@ menuSinal = ttk.Combobox(janela, values = sinalTratado, width = 165, height = 40
 
 menuSinal.grid(column = 0, row = 3)
 menuSinal.current(0)
-valorSinal = menuSinal.get()  
+valorSinal = menuSinal.get()
+listaEnviada[1] = SinalSaida
 
 
 ############# trata o valor de sinal para adiquirir o valor ###############
-posicaoInicial = valorSinal.find(", None, {")    
-posicaoFinal = valorSinal.find("}", posicaoInicial)   
-valorSinal = valorSinal[posicaoInicial + 9:posicaoFinal]
-valorSinal = valorSinal.split(",")  
+valorSinal = tratamentoSinal(valorSinal) 
     
 ####################### cria o menu de valor ##############################
 labelTopValor=tk.Label(janela, text = "escolha o valor a ser enviado")
@@ -121,16 +165,30 @@ menuValor = ttk.Combobox(janela, values = valorSinal, width = 165, height = 40)
 menuValor.grid(column = 0, row = 5)
 menuValor.current(0)
 valorFixado = menuValor.get()
-
+valorSaida = valorFixado
+valorSaida = trataSaida(valorSaida)
+listaEnviada[2] = valorSaida
 
 menuMensagem.bind("<<ComboboxSelected>>", atualizaMensagem)
 menuSinal.bind("<<ComboboxSelected>>", atualizaSinal)
+menuValor.bind("<<ComboboxSelected>>", atualizaValor)
+
+################# cria o botão para mandar a mensagem #####################
+def eventoEnviar():        
+            
+    mensagemFinal = tk.Label(janela, text = listaEnviada)
+    mensagemFinal.grid(column = 0, row = 7)
+    print(listaEnviada)
+
+
+botaoEnviar = tk.Button(janela, text = "Enviar", command = eventoEnviar)
+botaoEnviar.grid(column = 0, row = 6)
 
 #################################################################################################################################################################
-
 
 janela.mainloop()
 
                             
+
 
 
